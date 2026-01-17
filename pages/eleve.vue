@@ -100,56 +100,49 @@
       this.fetchData();
     },
     methods: {
-      async fetchData() {
+  async fetchData() {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        this.$router.push('/login');
+        return;
+      }
 
-        // Récupérer le token JWT du local storage
-        const token = localStorage.getItem('token');
-        const decodedToken = jwtDecode(token)
-        try {
-          const response = await axios.get(`http://localhost:8080/api/eleve/${decodedToken.id}`);
+      const decodedToken = jwtDecode(token);
 
-          this.eleve = {
-            id: response.data.eleve_id,
-            fullName: `${response.data.eleve_nom} ${response.data.eleve_prenom}`,
-            username: response.data.eleve_username,
-            photo: response.data.eleve_photo
-          }
-
-        } catch (error) {
-          if (error.response) {
-            // Erreurs spécifiques en fonction des codes de réponse HTTP
-            switch (error.response.status) {
-              case 401:
-                console.error('Non autorisé. Veuillez vous connecter.');
-                // Rediriger vers la page de connexion ou afficher un message d'erreur
-                this.$router.push('/login');
-                break;
-              case 403:
-                console.error('Accès interdit. Vous n\'avez pas les droits nécessaires.');
-                // Afficher un message d'erreur ou rediriger l'utilisateur
-                break;
-              case 404:
-                console.error('Élève non trouvé.');
-                // Gérer l'élément non trouvé
-                break;
-              default:
-                console.error('Erreur de serveur. Veuillez réessayer plus tard.');
-                break;
-            }
-          } else {
-            // Erreur réseau ou autre problème
-            console.error('Erreur de réseau ou autre problème :', error.message);
-          }
+      const response = await $fetch(`/api/eleve/${decodedToken.id}`, {
+        headers: {
+          Authorization: `Bearer ${token}`
         }
-      },
-      changeView(item) {
-      this.currentView = item.component;
-      this.selectedItem = item.name;
-    },
-      logout() {
-        this.$router.push({ name: 'index' });
-      },
-    },
+      });
+
+      this.eleve = {
+        id: response.eleve_id,
+        fullName: `${response.eleve_nom} ${response.eleve_prenom}`,
+        username: response.eleve_username,
+        photo: response.eleve_photo
+      };
+
+    } catch (error) {
+      console.error('Erreur chargement élève:', error);
+
+      if (error?.status === 401) {
+        this.$router.push('/login');
+      }
+    }
+  },
+
+  changeView(item) {
+    this.currentView = item.component;
+    this.selectedItem = item.name;
+  },
+
+  logout() {
+    localStorage.removeItem('token');
+    this.$router.push({ name: 'index' });
+  }
+}
+
   };
   </script>
   

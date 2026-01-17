@@ -113,46 +113,69 @@
       this.fetchData();
     },
     methods: {
-      loadId(classeId, matiereId) {
-        this.currentClasseId = classeId;
-        this.currentMatiereId = matiereId;
-        this.selectedClasseId = classeId; // Mettre à jour l'ID de la classe sélectionnée
-        console.log('Updated currentClasseId:', this.currentClasseId);
-        console.log('Updated currentMatiere:', this.currentMatiereId);
-      },
-      async fetchData() {
-        const token = localStorage.getItem('token');
-        const decodedToken = jwtDecode(token)
-        try {
-          const response = await axios.get(`http://localhost:8080/api/enseignant/${decodedToken.id}`);
-          this.enseignant = {
-            id: response.data.id,
-            username: response.data.username,
-            fullname: `${response.data.Enseignant_nom} ${response.data.Enseignant_prenom}`,
-            photo: response.data.enseignant_photo
-          };
-        } catch (error) {
-          console.error(error);
-        }
-        this.fetchClasse(); // Appeler fetchClasse après avoir récupéré les données de l'enseignant
-      },
-      async fetchClasse() {
-        const token = localStorage.getItem('token');
-        const decodedToken = jwtDecode(token)
-        try {
-          const response = await axios.get(`http://localhost:8080/api/classes/${decodedToken.id}`);
-          this.classes = response.data; // Met à jour la liste des classes avec les données récupérées
-        } catch (error) {
-          console.error(error);
-        }
-      },
-      changeView(view) {
-        this.currentView = view;
-      },
-      logout() {
-        this.$router.push({ name: 'index' });
-      },
-    },
+  loadId(classeId, matiereId) {
+    this.currentClasseId = classeId;
+    this.currentMatiereId = matiereId;
+    this.selectedClasseId = classeId;
+    console.log('Updated currentClasseId:', this.currentClasseId);
+    console.log('Updated currentMatiere:', this.currentMatiereId);
+  },
+
+  async fetchData() {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) return this.$router.push('/login');
+
+      const decodedToken = jwtDecode(token);
+
+      const response = await $fetch(`/api/enseignant/${decodedToken.id}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+
+      this.enseignant = {
+        id: response.id,
+        username: response.username,
+        fullname: `${response.Enseignant_nom} ${response.Enseignant_prenom}`,
+        photo: response.enseignant_photo
+      };
+
+      // Appeler fetchClasse après avoir récupéré les données de l'enseignant
+      await this.fetchClasse();
+
+    } catch (error) {
+      console.error('Erreur chargement enseignant:', error);
+      this.$router.push('/login');
+    }
+  },
+
+  async fetchClasse() {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) return this.$router.push('/login');
+
+      const decodedToken = jwtDecode(token);
+
+      const response = await $fetch(`/api/classes/${decodedToken.id}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+
+      this.classes = response; // Met à jour la liste des classes
+
+    } catch (error) {
+      console.error('Erreur chargement classes:', error);
+    }
+  },
+
+  changeView(view) {
+    this.currentView = view;
+  },
+
+  logout() {
+    localStorage.removeItem('token');
+    this.$router.push({ name: 'index' });
+  }
+}
+
   };
   </script>
   
