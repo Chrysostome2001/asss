@@ -124,7 +124,12 @@
         const token = localStorage.getItem('token');
         const decodedToken = jwtDecode(token)
         try {
-          const response = await $fetch(`http://localhost:8080/api/enseignant/${decodedToken.id}`);
+          const response = await $fetch(`/api/enseignant/${decodedToken.id}`,{
+            headers: {
+          Authorization: `Bearer ${token}`
+        }
+      });
+
           this.enseignant = {
             id: response.data.id,
             username: response.data.username,
