@@ -124,12 +124,7 @@
         const token = localStorage.getItem('token');
         const decodedToken = jwtDecode(token)
         try {
-          const response = await $fetch(`/api/enseignant/${decodedToken.id}`,{
-            headers: {
-          Authorization: `Bearer ${token}`
-        }
-      });
-
+          const response = await axios.get(`http://localhost:8080/api/enseignant/${decodedToken.id}`);
           this.enseignant = {
             id: response.data.id,
             username: response.data.username,
@@ -145,11 +140,7 @@
         const token = localStorage.getItem('token');
         const decodedToken = jwtDecode(token)
         try {
-          const response = await $fetch(`/api/classes/${decodedToken.id}`,{
-            headers: {
-          Authorization: `Bearer ${token}`
-        }
-        });
+          const response = await axios.get(`http://localhost:8080/api/classes/${decodedToken.id}`);
           this.classes = response.data; // Met à jour la liste des classes avec les données récupérées
         } catch (error) {
           console.error(error);

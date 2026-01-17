@@ -92,10 +92,13 @@ export default {
 
       this.loginError = null;
       try {
-        const response = await axios.post('http://localhost:8080/api/login', {
+        const response = await $fetch('/api/login', {
+          method: 'POST',
+        body: {
           username: this.username,
           password: this.password,
-          role: 'enseignant',
+          role: 'enseignant'
+        }
         });
         const { token, user } = response.data;
         localStorage.setItem('token', token);
