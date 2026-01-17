@@ -102,7 +102,7 @@ export default {
     this.loginError = null;
 
     try {
-      const response = await $fetch('/api/login', {
+      const response = await $fetch('/server/api/login.post.ts', {
         method: 'POST',
         body: {
           username: this.username,
