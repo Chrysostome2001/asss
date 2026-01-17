@@ -71,6 +71,7 @@ export default {
     password: '',
     showPassword: false,
     loginError: null,
+    role:'parent',
     nameRules: [
       value => !!value || "Le nom d'utilisateur est requis.",
     ],
@@ -92,14 +93,14 @@ export default {
 
       this.loginError = null;
       try {
-        const response = await $fetch('/api/login', {
-          method: 'POST',
+      const response = await $fetch('/api/login', {
+        method: 'POST',
         body: {
           username: this.username,
           password: this.password,
-          role: 'parent',
+          role: this.role
         }
-        });
+      });
         const { token, user } = response.data;
         localStorage.setItem('token', token);
         const role = user.role;
