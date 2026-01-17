@@ -94,11 +94,11 @@ export default {
       try {
         const response = await $fetch('/api/login', {
           method: 'POST',
-        body: {
+          body: {
           username: this.username,
           password: this.password,
-          role: 'enseignant'
-        }
+          role: 'enseignant',
+          }
         });
         const { token, user } = response.data;
         localStorage.setItem('token', token);

@@ -94,42 +94,28 @@
       this.fetchData();
     },
     methods: {
-  async fetchData() {
-    try {
-      const token = localStorage.getItem('token');
-      if (!token) return;
-
-      const decodedToken = jwtDecode(token);
-
-      const response = await $fetch(`/api/directeur/${decodedToken.id}`, {
-        headers: {
-          Authorization: `Bearer ${token}`
+      async fetchData() {
+        const token = localStorage.getItem('token');
+        const decodedToken = jwtDecode(token);
+        try {
+          const response = await axios.get(`http://localhost:8080/api/directeur/${decodedToken.id}`);
+          this.directeur = {
+            id: response.data.id,
+            username: response.data.username,
+            photo: response.data.directeur_photo
+          };
+        } catch (error) {
+          console.error(error);
         }
-      });
-
-      this.directeur = {
-        id: response.id,
-        username: response.username,
-        photo: response.directeur_photo
-      };
-
-    } catch (error) {
-      console.error('Erreur chargement directeur:', error);
-      this.$router.push({ name: 'index' });
-    }
-  },
-
-  changeView(item) {
-    this.currentView = item.component;
-    this.selectedItem = item.name;
-  },
-
-  logout() {
-    localStorage.removeItem('token');
-    this.$router.push({ name: 'index' });
-  }
-}
-
+      },
+      changeView(item) {
+        this.currentView = item.component;
+        this.selectedItem = item.name;
+      },
+      logout() {
+        this.$router.push({ name: 'index' });
+      },
+    },
   };
   </script>
   
