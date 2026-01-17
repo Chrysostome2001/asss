@@ -145,7 +145,11 @@
         const token = localStorage.getItem('token');
         const decodedToken = jwtDecode(token)
         try {
-          const response = await axios.get(`http://localhost:8080/api/classes/${decodedToken.id}`);
+          const response = await $fetch(`/api/classes/${decodedToken.id}`,{
+            headers: {
+          Authorization: `Bearer ${token}`
+        }
+        });
           this.classes = response.data; // Met à jour la liste des classes avec les données récupérées
         } catch (error) {
           console.error(error);
