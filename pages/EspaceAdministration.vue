@@ -89,41 +89,48 @@ export default {
     lockoutEndTime: null, // Stockage du moment de fin de blocage
   }),
   methods: {
-    async login() {
+  async login() {
+    const currentTime = new Date().getTime();
 
-       // Vérifier si l'utilisateur est bloqué
-       const currentTime = new Date().getTime();
-      if (this.lockoutEndTime && currentTime < this.lockoutEndTime) {
-        this.loginError = `Trop de tentatives échouées. Réessayez dans ${Math.ceil((this.lockoutEndTime - currentTime) / 60000)} minutes.`;
-        return;
-      }
+    if (this.lockoutEndTime && currentTime < this.lockoutEndTime) {
+      this.loginError = `Trop de tentatives échouées. Réessayez dans ${Math.ceil(
+        (this.lockoutEndTime - currentTime) / 60000
+      )} minutes.`;
+      return;
+    }
 
-      this.loginError = null;
-      try {
-        const response = await axios.post('http://localhost:8080/api/login', {
+    this.loginError = null;
+
+    try {
+      const response = await $fetch('/api/login', {
+        method: 'POST',
+        body: {
           username: this.username,
           password: this.password,
-          role: this.role,
-        });
-        const { token, user } = response.data;
-        localStorage.setItem('token', token);
-        const role = user.role;
-        if(role === 'admin'){
-          this.$router.push({ path: `/admin` });
-        } else {
-          this.$router.push({ path: `/directeur` });
+          role: this.role
         }
-      } catch (error) {
-        // Gérer les tentatives incorrectes
-        if (error.response && error.response.data.lockedOut) {
-          this.lockoutEndTime = error.response.data.lockoutEndTime;
-          this.loginError = `Trop de tentatives échouées. Réessayez dans ${Math.ceil((this.lockoutEndTime - currentTime) / 60000)} minutes.`;
-        } else {
-          this.loginError = 'Nom d\'utilisateur ou mot de passe incorrect.';
-        }
+      });
+
+      const { token, user } = response;
+      localStorage.setItem('token', token);
+
+      if (user.role === 'admin') {
+        this.$router.push({ path: '/admin' });
+      } else {
+        this.$router.push({ path: '/directeur' });
       }
-    },
-  },
+
+    } catch (error) {
+      if (error?.data?.lockedOut) {
+        this.lockoutEndTime = error.data.lockoutEndTime;
+        this.loginError = `Trop de tentatives échouées. Réessayez plus tard.`;
+      } else {
+        this.loginError = "Nom d'utilisateur ou mot de passe incorrect.";
+      }
+    }
+  }
+}
+
 };
 </script>
 
