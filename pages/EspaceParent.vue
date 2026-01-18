@@ -62,58 +62,73 @@
 </template>
 
 <script>
-import axios from 'axios';
-
-export default {
-  data: () => ({
-    valid: false,
-    username: '',
-    password: '',
-    showPassword: false,
-    loginError: null,
-    nameRules: [
-      value => !!value || "Le nom d'utilisateur est requis.",
-    ],
-    passwordRules: [
-      value => !!value || 'Le mot de passe est requis.',
-      value => (value && value.length >= 3) || 'Le mot de passe doit comporter au moins 6 caractères.',
-    ],
-    lockoutEndTime: null, // Stockage du moment de fin de blocage
-  }),
-  methods: {
-    async login() {
-      
-      // Vérifier si l'utilisateur est bloqué
-      const currentTime = new Date().getTime();
-      if (this.lockoutEndTime && currentTime < this.lockoutEndTime) {
-        this.loginError = `Trop de tentatives échouées. Réessayez dans ${Math.ceil((this.lockoutEndTime - currentTime) / 60000)} minutes.`;
-        return;
-      }
-
-      this.loginError = null;
-      try {
-        const response = await axios.post('http://localhost:8080/api/login', {
-          username: this.username,
-          password: this.password,
-          role: 'parent',
-        });
-        const { token, user } = response.data;
-        localStorage.setItem('token', token);
-        const role = user.role;
-        this.$router.push({ path: `/parent` });
-      } catch (error) {
-        // Gérer les tentatives incorrectes
-        if (error.response && error.response.data.lockedOut) {
-          this.lockoutEndTime = error.response.data.lockoutEndTime;
-          this.loginError = `Trop de tentatives échouées. Réessayez dans ${Math.ceil((this.lockoutEndTime - currentTime) / 60000)} minutes.`;
-        } else {
-          this.loginError = 'Nom d\'utilisateur ou mot de passe incorrect.';
+  export default {
+    data: () => ({
+      valid: false,
+      username: '',
+      password: '',
+      showPassword: false,
+      loginError: null,
+      nameRules: [
+        value => !!value || "Le nom d'utilisateur est requis.",
+      ],
+      passwordRules: [
+        value => !!value || 'Le mot de passe est requis.',
+        value =>
+          (value && value.length >= 6) ||
+          'Le mot de passe doit comporter au moins 6 caractères.',
+      ],
+      lockoutEndTime: null,
+    }),
+  
+    methods: {
+      async login() {
+        const currentTime = Date.now();
+  
+        // 🔒 Vérifier si le compte est bloqué
+        if (this.lockoutEndTime && currentTime < this.lockoutEndTime) {
+          this.loginError = `Trop de tentatives échouées. Réessayez dans ${Math.ceil(
+            (this.lockoutEndTime - currentTime) / 60000
+          )} minutes.`;
+          return;
         }
-      }
+  
+        this.loginError = null;
+  
+        try {
+          // ✅ Appel backend Nuxt (même domaine → pas de CORS)
+          const response = await $fetch('/api/login', {
+            method: 'POST',
+            body: {
+              username: this.username,
+              password: this.password,
+              role: 'parent',
+            },
+          });
+  
+          const { token, user } = response;
+  
+          // 💾 Sauvegarde du token
+          localStorage.setItem('token', token);
+  
+          // 🚀 Redirection parent
+          this.$router.push('/parent');
+  
+        } catch (error) {
+          if (error?.data?.lockedOut && error?.data?.lockoutEndTime) {
+            this.lockoutEndTime = error.data.lockoutEndTime;
+            this.loginError = `Trop de tentatives échouées. Réessayez dans ${Math.ceil(
+              (this.lockoutEndTime - currentTime) / 60000
+            )} minutes.`;
+          } else {
+            this.loginError = "Nom d'utilisateur ou mot de passe incorrect.";
+          }
+        }
+      },
     },
-  },
-};
-</script>
+  };
+  </script>
+  
 
 <style scoped>
 .fill-height {
