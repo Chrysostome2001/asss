@@ -88,88 +88,103 @@
       </v-app-bar>
       
       <v-main class="neutral-background" style="overflow-y: auto;">
-        <component :is="currentView" />
+        <component :is="componentsMap[currentView]" />
         <router-view />
       </v-main>
     </v-app>
   </template>
   
-  <script>
-  import axios from 'axios';
-  import { jwtDecode } from 'jwt-decode';
-  import HomeParent from '~/components/HomeParent.vue';
-  import Compte from '~/components/Compte.vue';
-  import DashboardParent from '@/components/DashboardParent';
-  import VoirAvis from '~/components/VoirAvis.vue';
-  export default {
-    data() {
-      return {
-        id: null,
-        parent: {},
-        drawer: true,
-        currentView: 'HomeParent',
-        selectedItem: 'HomeParent',
-        newAvisCount: 0, // Compteur des nouveaux avis
-        newNotesCount: 0,
-        menuItems: [
-          { name: 'Notes', label: 'Consulter notes', component: 'DashboardParent', icon: 'mdi-school', iconColor: 'green' },
-          { name: 'VoirAvis', label: 'Avis des profs', component: 'VoirAvis', icon: 'mdi-comment-text-outline', iconColor: '#00FF00' },
-          { name: 'Compte', label: 'Compte', component: 'Compte', icon: 'mdi-account-circle', iconColor: 'blue' },
-          { name: 'HomeParent', label: 'Aide', component: 'HomeParent', icon: 'mdi-information-outline', iconColor: 'blue' },
-        ],
-      };
-    },
-    components: {
+  <script setup>
+    import { jwtDecode } from 'jwt-decode'
+    import HomeParent from '~/components/HomeParent.vue'
+    import Compte from '~/components/Compte.vue'
+    import DashboardParent from '@/components/DashboardParent'
+    import VoirAvis from '~/components/VoirAvis.vue'
+    
+    const drawer = ref(true)
+    const currentView = ref('HomeParent')
+    const selectedItem = ref('HomeParent')
+    
+    const parent = ref({})
+    const newAvisCount = ref(0)
+    const newNotesCount = ref(0)
+    
+    const menuItems = [
+      { name: 'Notes', label: 'Consulter notes', component: 'DashboardParent', icon: 'mdi-school', iconColor: 'green' },
+      { name: 'VoirAvis', label: 'Avis des profs', component: 'VoirAvis', icon: 'mdi-comment-text-outline', iconColor: '#00FF00' },
+      { name: 'Compte', label: 'Compte', component: 'Compte', icon: 'mdi-account-circle', iconColor: 'blue' },
+      { name: 'HomeParent', label: 'Aide', component: 'HomeParent', icon: 'mdi-information-outline', iconColor: 'blue' },
+    ]
+    
+    const componentsMap = {
       HomeParent,
       Compte,
       DashboardParent,
       VoirAvis,
-    },
-    created() {
-      this.fetchData();
-    },
-    methods: {
-      async fetchData() {
-        const token = localStorage.getItem('token');
-        const decodedToken = jwtDecode(token)
-        try {
-          const response = await axios.get(`http://localhost:8080/api/parent/${decodedToken.id}`);
-          this.parent = {
-            id: response.data.parent_id,
-            fullName: `${response.data.parent_nom} ${response.data.parent_prenom}`,
-            username: response.data.parent_username,
-            photo: response.data.parent_photo
-          }
-
-          // Récupérer le nombre de nouveaux avis
-          const avisResponse = await axios.get(`http://localhost:8080/api/parent/${decodedToken.id}/nouveaux-avis`);
-          this.newAvisCount = avisResponse.data.nouveauxAvisCount;
-
-          // Récupérer le nombre de nouvelles notes
-          const NotesResponses = await axios.get(`http://localhost:8080/api/parent/${decodedToken.id}/nouveaux-notes`);
-          this.newNotesCount = NotesResponses.data.nouveauxNotesCount;
-
-          console.log(this.parent)
-        } catch (error) {
-          console.error(error);
+    }
+    
+    const fetchData = async () => {
+      const token = localStorage.getItem('token')
+      if (!token) return
+    
+      const decoded = jwtDecode(token)
+    
+      try {
+        // ✅ infos parent
+        const parentData = await $fetch(`/api/parent/${decoded.id}`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        })
+    
+        parent.value = {
+          id: parentData.parent_id,
+          fullName: `${parentData.parent_nom} ${parentData.parent_prenom}`,
+          username: parentData.parent_username,
+          photo: parentData.parent_photo,
         }
-      },
-      changeView(item) {
-        this.currentView = item.component;
-        this.selectedItem = item.name;
-        if (item.name === 'VoirAvis') {
-          this.newAvisCount = 0;
-        }/*
-        if(item.name = 'DashboardParent'){
-          newNotesCount = 0
-        }*/
-      },
-      logout() {
-        this.$router.push({ name: 'index' });
-    },
-    },
-  };
-  </script>
+    
+        // ✅ nouveaux avis
+        const avis = await $fetch(`/api/parent/${decoded.id}/nouveaux-avis`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        })
+        newAvisCount.value = avis.nouveauxAvisCount
+    
+        // ✅ nouvelles notes
+        const notes = await $fetch(`/api/parent/${decoded.id}/nouveaux-notes`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        })
+        newNotesCount.value = notes.nouveauxNotesCount
+    
+      } catch (err) {
+        console.error(err)
+      }
+    }
+    
+    const changeView = (item) => {
+      currentView.value = item.component
+      selectedItem.value = item.name
+    
+      if (item.name === 'VoirAvis') {
+        newAvisCount.value = 0
+      }
+      if (item.name === 'Notes') {
+        newNotesCount.value = 0
+      }
+    }
+    
+    const logout = () => {
+      localStorage.removeItem('token')
+      navigateTo('/')
+    }
+    
+    onMounted(fetchData)
+</script>
+    
 
 <style scoped>
 .selected-title {
